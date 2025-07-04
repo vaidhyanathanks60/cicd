@@ -1,0 +1,55 @@
+version: '3.8'
+services:
+  app:
+    build: ./
+    ports:
+      - "5000:5000"
+    networks:
+      - devops-net
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    networks:
+      - devops-net
+    depends_on:
+      - app
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - devops-net
+    depends_on:
+      - app
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - devops-net
+    depends_on:
+      - prometheus
+
+networks:
+  devops-net:
+    driver: bridge
+
+volumes:
+  jenkins_home:
+  prometheus_data:
+  grafana_data:
